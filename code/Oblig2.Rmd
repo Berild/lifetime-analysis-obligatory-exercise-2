@@ -1,0 +1,71 @@
+---
+title: "Obligatory Exercise 2"
+subtitle: "TMA4275 Lifetime analysis Spring 2019 "
+author: "Martin Outzen Berild"
+date: "23 mars 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(survival)
+library(survminer)
+library(kableExtra)
+library(dplyr)
+library(SurvRegCensCov)
+```
+## a)
+```{r}
+lungcancer.df <- as.data.frame(
+  read.table("../data/TMA4275VeteranLungCancer.txt", 
+             header = TRUE))
+KM0 <- survfit(Surv(Y, C) ~ Treat,  
+               type="kaplan-meier", 
+               conf.type="log", 
+               data=lungcancer.df)
+ggsurvplot(KM0, data = lungcancer.df)
+
+treat.median <- summary(KM0)$table[, "median"]
+treat.expected <- summary(KM0)$table[, "*rmean"]
+table.treat <- data.frame(treatment = names(treat.median),
+                           median = unname(treat.median),
+                           expected = unname(treat.expected))
+kable(table.treat,
+      caption = "\\label{tab:treat}Estimated median and expected 
+      lifetime by treatment") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", 
+                                      "condensed","responsive"),
+                full_width = F,position = "center")
+```
+```{r}
+KM1 <- survfit(Surv(Y, C) ~ Cell,  
+               type="kaplan-meier", 
+               conf.type="log", 
+               data=lungcancer.df)
+ggsurvplot(KM1, data = lungcancer.df)
+cell.median <- summary(KM1)$table[, "median"]
+cell.expected <- summary(KM1)$table[, "*rmean"]
+table.cell <- data.frame(treatment = names(cell.median),
+                           median = unname(cell.median),
+                           expected = unname(cell.expected))
+kable(table.cell,
+      caption = "\\label{tab:cell}Estimated median 
+      and expected lifetime by cell type") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover",
+                                      "condensed","responsive"),
+                full_width = F,position = "center")
+```
+## b)
+```{r}
+wei.lung<-survreg(Surv(Y,C)~(Treat+PS+Age+Prior+Cell),data=lungcancer.df,dist = "weibull")
+ConvertWeibull(wei.lung,conf.level = 0.95)
+```
+## c)
+
+## d)
+
+## e)
+
+## f)
+
