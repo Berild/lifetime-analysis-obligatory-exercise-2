@@ -14,6 +14,7 @@ library(survminer)
 library(kableExtra)
 library(dplyr)
 library(SurvRegCensCov)
+library(flexsurv)
 ```
 ## a)
 ```{r}
@@ -58,10 +59,15 @@ kable(table.cell,
 ```
 ## b)
 ```{r}
-wei.lung<-survreg(Surv(Y,C)~(Treat+PS+Age+Prior+Cell),data=lungcancer.df,dist = "weibull")
-ConvertWeibull(wei.lung,conf.level = 0.95)
+wei.lung<-survreg(Surv(Y,C) ~ Treat + PS + Age + Prior + factor(Cell), data = lungcancer.df, dist = "weibull")
+wei.lung
 ```
 ## c)
+```{r}
+fit.coxph <- survreg(Surv(Y,C) ~ Treat + PS + Age + Prior + factor(Cell), data = lungcancer.df, dist = "weibull")
+fit.coxph
+ggforest(fit.coxph, data = lungcancer.df)
+```
 
 ## d)
 
