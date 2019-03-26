@@ -7,6 +7,8 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+#rm(list = ls())
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(survival)
@@ -58,15 +60,25 @@ kable(table.cell,
                 full_width = F,position = "center")
 ```
 ## b)
+
 ```{r}
 wei.lung<-survreg(Surv(Y,C) ~ Treat + PS + Age + Prior + factor(Cell), data = lungcancer.df, dist = "weibull")
-wei.lung
+```
+
+```{r}
+table.b <- data.frame(Levels.of.Cell = c(1,2,3,4), x2 =c(0,1,0,0), x3 = c(0,0,1,0), x4 = c(0,0,0,1))
+kable(table.b,align=rep('c', 4),
+      caption = "\\label{tab:b}Estimated median 
+      and expected lifetime by cell type") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover",
+                                      "condensed","responsive"),
+                full_width = F,position = "center")
 ```
 ## c)
 ```{r}
-fit.coxph <- survreg(Surv(Y,C) ~ Treat + PS + Age + Prior + factor(Cell), data = lungcancer.df, dist = "weibull")
-fit.coxph
-ggforest(fit.coxph, data = lungcancer.df)
+#fit.coxph <- survreg(Surv(Y,C) ~ Treat + PS + Age + Prior + factor(Cell), data = lungcancer.df, dist = "weibull")
+#fit.coxph
+#ggforest(fit.coxph, data = lungcancer.df)
 ```
 
 ## d)
