@@ -62,7 +62,15 @@ kable(table.cell,
 ## b)
 
 ```{r}
-wei.lung<-survreg(Surv(Y,C) ~ Treat + PS + Age + Prior + factor(Cell), data = lungcancer.df, dist = "weibull")
+wei.lung<-survreg(Surv(Y,C) ~ Treat + PS + Month+  Age + Prior + factor(Cell), data = lungcancer.df, dist = "weibull")
+coef <- wei.lung$coefficients
+lifeWeil <- function(data, coef){
+  x = c(1,data$Treat, data$PS, data$Month, data$Age, data$Prior,as.numeric(data$Cell==2),
+        as.numeric(data$Cell==3),as.numeric(data$Cell==4))
+  return(exp(as.numeric(coef)%*%x))
+}
+lifeWeil(lungcancer.df[1,],coef)
+lifetime1 = coef["Treat"] + coef["PS"] + coef["Age"] + Coef["Prior"]
 ```
 
 ```{r}
@@ -76,13 +84,15 @@ kable(table.b,align=rep('c', 4),
 ```
 ## c)
 ```{r}
-#fit.coxph <- survreg(Surv(Y,C) ~ Treat + PS + Age + Prior + factor(Cell), data = lungcancer.df, dist = "weibull")
-#fit.coxph
-#ggforest(fit.coxph, data = lungcancer.df)
+summary(wei.lung)
 ```
 
 ## d)
+```{r}
+fit.coxph <- survreg(Surv(Y,C) ~ Treat + PS+ Month + Age + Prior + factor(Cell), data = lungcancer.df)
 
+#ggforest(fit.coxph, data = lungcancer.df)
+```
 ## e)
 
 ## f)
