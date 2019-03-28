@@ -122,6 +122,7 @@ life2 <- lifeWeil(patient2,coef)
 cat("Estimated median lifetime equal patient 1:", life1)
 cat("Estimated median lifetime equal patient 19:", life2)
 ```
+
 ## c)
 To look at the $p\textrm{-values}$ to determine significant effect of the covariates in our model, we can look at the output from the function $\texttt{summary.survreg}$.
 ```{r}
@@ -243,7 +244,7 @@ summary(loglog.lung)
 ```
 From the loglikelihood and the number of parameters $k$ in the different distributions we can caluclate the $AIC$(Akaike's Information Criterion) by the equation
 $$
-  AIC = -2*
+  AIC = -2\cdot log L + 2\cdot k
 $$
 ```{r}
 AIC.wei <- -2*wei.lung.int$loglik[1]+2*summary(wei.lung.int)$df
