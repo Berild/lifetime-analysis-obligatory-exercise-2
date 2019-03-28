@@ -7,19 +7,25 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-#rm(list = ls())
 knitr::opts_chunk$set(echo = TRUE)
+```
+In the solution exercise we used the \textbf{R}-libraries:
+```{r}
+# for ggplot and dataframe
 library(tidyverse)
+# for survival analysis functions
 library(survival)
+# to plot survival curves in ggplot
 library(survminer)
+# to create tables in rmd
 library(kableExtra)
-library(dplyr)
+# to get more information about surival regression
 library(SurvRegCensCov)
-library(flexsurv)
+# to predict usable covariates
 library(rms)
 ```
 ## a)
+We want to look at the lifetime distributions in the patients in the different treatment groups, \textit{standard} and \textit{test}.
 ```{r}
 lungcancer.df <- as.data.frame(
   read.table("../data/TMA4275VeteranLungCancer.txt", 
@@ -29,7 +35,9 @@ KM0 <- survfit(Surv(Y, C) ~ Treat,
                conf.type="log", 
                data=lungcancer.df)
 ggsurvplot(KM0, data = lungcancer.df)
-
+```
+In the figure above the red curve is the survival distribution of the \textit{standard} treatment and the blue curve is the survival distribution of the \textit{test} treatment. From the plot we can see that the \textit{test} treatment is worse(steeper curve) in small lifetimes, but doesn't hit survival probability of $0$ for almost double the lifetime than for the \textit{standard} treatment. This tells us that \textit{test} is worse for '\textit{bad}' patients, but is better for '\textit{good}'. What a '\textit{bad}' or '\textit{good}' patient is, it's hard to say anything about yet, but might be possible after furter survival analysis and the inclusion of more covariates. The median and expected lifetimes of patients in the two groups is calculated in the code bellow and the results of which is shown in \ref{tab:treat}. From this we can see that median of the survival probaility is lower for the \textit{test} treatment, but the expected lifetime is alittle higher than for the \textit{standard} treatment. 
+```{r}
 treat.median <- summary(KM0)$table[, "median"]
 treat.expected <- summary(KM0)$table[, "*rmean"]
 table.treat <- data.frame(treatment = names(treat.median),
@@ -42,12 +50,16 @@ kable(table.treat,
                                       "condensed","responsive"),
                 full_width = F,position = "center")
 ```
+Now we do a similar assesment of a grouping by celltypes, which consist of the four different celltypes \textit{Squamous}($1$), \textit{small-cell}($2$), \textit{adeno}($3$) and \textit{large}($4$).   
 ```{r}
 KM1 <- survfit(Surv(Y, C) ~ Cell,  
                type="kaplan-meier", 
                conf.type="log", 
                data=lungcancer.df)
 ggsurvplot(KM1, data = lungcancer.df)
+```
+The figure above shows the survival distributions in the grouping by celltype. Overall $Cell = 2$ and $Cell = 3$ is the worst, and $Cell = 1$ looks like the best $Cell$ for lifetime. The code bellow calculates the median and expected lifetimes in the grouping by celltype, and the results are shown in the table \ref{tab:cell}.
+```{r}
 cell.median <- summary(KM1)$table[, "median"]
 cell.expected <- summary(KM1)$table[, "*rmean"]
 table.cell <- data.frame(treatment = names(cell.median),
@@ -60,6 +72,9 @@ kable(table.cell,
                                       "condensed","responsive"),
                 full_width = F,position = "center")
 ```
+From this result we see that the $Cell=1$ has the heighest expected lifetime, followed by $Cell = 4$. But their roles are reversed for the median. For $Cell = 2$ and $Cell = 3$ they are almost equal in both accounts, but much lower lifetimes than the two others. The same conclusions as the one we drew from the figures. 
+The reason the values of the median and expected lifetime not being consistently heigher than other group factors is because there are alot of data beeing either censored or dead the lower lifetimes. But the survival distribution might have data points at high lifetimes, and thereby have a long right tail, that will affect the expected lifetime alot. 
+
 ## b)
 In this exercise we will perform a fit to the Weibull regression model, with Treat, PS, Month, Age and Prior as model parameter, and Cell as a factor. The result of which is shown in the code bellow, using $\texttt{survreg}$ from the R-package $\textbf{survival}$.
 ```{r}
@@ -115,7 +130,6 @@ summary(wei.lung)
 From the $p\textrm{-values}$ we can see that $PS$ and $Cell$ has significant effect. We can also look at the figure bellow to to get a more visual representation of the $p\textrm{-values}$.
 ```{r}
 psm.lung <- psm(Surv(Y,C)~Treat + PS + Month+  Age + Prior + factor(Cell), data = lungcancer.df,dist="weibull")
-#plot(anova(psm.lung),margin=c("chisq","df","P"))
 ```
 To look at the significant difference between the two treatments we can use the $\texttt{ConvertWeibull}$ to get the Event Time Ratio[ETR] of our model. 
 ```{r}
@@ -229,7 +243,7 @@ summary(loglog.lung)
 ```
 From the loglikelihood and the number of parameters $k$ in the different distributions we can caluclate the $AIC$(Akaike's Information Criterion) by the equation
 $$
-
+  AIC = -2*
 $$
 ```{r}
 AIC.wei <- -2*wei.lung.int$loglik[1]+2*summary(wei.lung.int)$df
