@@ -341,9 +341,27 @@ Cell=4
 </div>
 <div id="b" class="section level2">
 <h2>b)</h2>
-<pre class="r"><code>wei.lung&lt;-survreg(Surv(Y,C) ~ Treat + PS + Age + Prior + factor(Cell), data = lungcancer.df, dist = &quot;weibull&quot;)</code></pre>
+<p>In this exercise we will perform a fit to the Weibull regression model, with Treat, PS, Month, Age and Prior as model parameter, and Cell as a factor. The result of which is shown in the code bellow, using <span class="math inline">\(\texttt{survreg}\)</span> from the R-package <span class="math inline">\(\textbf{survival}\)</span>.</p>
+<pre class="r"><code>wei.lung&lt;-survreg(Surv(Y,C) ~ Treat + PS + Month+  Age + Prior + factor(Cell), data = lungcancer.df, dist = &quot;weibull&quot;)
+wei.lung</code></pre>
+<pre><code>## Call:
+## survreg(formula = Surv(Y, C) ~ Treat + PS + Month + Age + Prior + 
+##     factor(Cell), data = lungcancer.df, dist = &quot;weibull&quot;)
+## 
+## Coefficients:
+##   (Intercept)         Treat            PS         Month           Age 
+##   3.490536315  -0.228522672   0.030068303  -0.000468814   0.006099184 
+##         Prior factor(Cell)2 factor(Cell)3 factor(Cell)4 
+##  -0.004389765  -0.826184615  -1.132725093  -0.397680785 
+## 
+## Scale= 0.9281153 
+## 
+## Loglik(model)= -715.6   Loglik(intercept only)= -748.1
+##  Chisq= 65.08 on 8 degrees of freedom, p= 4.65e-11 
+## n= 137</code></pre>
+<p>In the table  the defined indicators or dummy variables is shown. And we adapt this to our regression model.</p>
 <pre class="r"><code>table.b &lt;- data.frame(Levels.of.Cell = c(1,2,3,4), x2 =c(0,1,0,0), x3 = c(0,0,1,0), x4 = c(0,0,0,1))
-kable(table.b,
+kable(table.b,align=rep('c', 4),
       caption = &quot;\\label{tab:b}Estimated median 
       and expected lifetime by cell type&quot;) %&gt;% 
   kable_styling(bootstrap_options = c(&quot;striped&quot;, &quot;hover&quot;,
@@ -355,88 +373,202 @@ Estimated median and expected lifetime by cell type
 </caption>
 <thead>
 <tr>
-<th style="text-align:right;">
+<th style="text-align:center;">
 Levels.of.Cell
 </th>
-<th style="text-align:right;">
+<th style="text-align:center;">
 x2
 </th>
-<th style="text-align:right;">
+<th style="text-align:center;">
 x3
 </th>
-<th style="text-align:right;">
+<th style="text-align:center;">
 x4
 </th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:center;">
 1
 </td>
-<td style="text-align:right;">
+<td style="text-align:center;">
 0
 </td>
-<td style="text-align:right;">
+<td style="text-align:center;">
 0
 </td>
-<td style="text-align:right;">
+<td style="text-align:center;">
 0
 </td>
 </tr>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:center;">
 2
 </td>
-<td style="text-align:right;">
+<td style="text-align:center;">
 1
 </td>
-<td style="text-align:right;">
+<td style="text-align:center;">
 0
 </td>
-<td style="text-align:right;">
+<td style="text-align:center;">
 0
 </td>
 </tr>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:center;">
 3
 </td>
-<td style="text-align:right;">
+<td style="text-align:center;">
 0
 </td>
-<td style="text-align:right;">
+<td style="text-align:center;">
 1
 </td>
-<td style="text-align:right;">
+<td style="text-align:center;">
 0
 </td>
 </tr>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:center;">
 4
 </td>
-<td style="text-align:right;">
+<td style="text-align:center;">
 0
 </td>
-<td style="text-align:right;">
+<td style="text-align:center;">
 0
 </td>
-<td style="text-align:right;">
+<td style="text-align:center;">
 1
 </td>
 </tr>
 </tbody>
 </table>
+<p>Given <span class="math inline">\(x = \{x_1(\textrm{Treat}),x_2(\textrm{Cell=2}),x_3(\textrm{Cell=3}),x_5(\textrm{Cell=4}),x_5(\textrm{PS}),x_6(\textrm{Month}),x_7(\textrm{Age}),x_8(\textrm{Prior})\}\)</span>, the values of the covariates given some person, were the “” <span class="math inline">\(x_2,x_3,x_4\)</span> is set by table . From this the model for log-lifetime <span class="math inline">\(T\)</span> is given by the expression, with corresponding covariates <span class="math inline">\(\mathbf{x}\)</span>, <span class="math display">\[
+  ln(T) = \beta_0 + \sigma\epsilon + \sum\limits_{i = 1}^8 \beta_ix_i,
+\]</span> where <span class="math inline">\(\epsilon \sim G(0,\sigma)\)</span>, a gumbel distribution with shape <span class="math inline">\(\sigma\)</span>. This gives us the hazard rate function <span class="math display">\[
+  \begin{array}{rcl}
+      z(t) &amp; = &amp; \alpha \cdot exp\{\beta_0 + \sum_{i=1}^8 \beta_ix_i\}^{-\alpha}\cdot t^{\alpha-1} \\
+           &amp; = &amp; \alpha e^{-\alpha\beta_0}t^{\alpha-1}e^{-\alpha\cdot\sum_{i=1}^8 \beta_ix_i} \\
+           &amp; = &amp; z_0(t) \cdot e^{-\alpha\cdot\sum_{i=1}^8 \beta_ix_i}
+  \end{array}.
+\]</span> Now we will calculate the estimated median lifetimes of patients with respectivly the same covariates as patient number <span class="math inline">\(1\)</span> and <span class="math inline">\(19\)</span>. This means that for patient <span class="math inline">\(1\)</span> which has <span class="math inline">\(\mathrm{Cell} = 1\)</span> and we find a patient with the same, in this case we chose patient <span class="math inline">\(3\)</span>. For patient <span class="math inline">\(19\)</span> which has <span class="math inline">\(\mathrm{Cell} = 2\)</span>, we chose patient <span class="math inline">\(23\)</span>. In the function <span class="math inline">\(\texttt{lifeWeil}\)</span> the median lifetime from the our Weibull model is calculated.</p>
+<pre class="r"><code>ConvertWeibull(wei.lung,conf.level = 0.95)</code></pre>
+<pre><code>## $vars
+##                    Estimate          SE
+## lambda         0.0232631060 0.018858119
+## gamma          1.0774523643 0.071447459
+## Treat          0.2462222933 0.202693590
+## PS            -0.0323971643 0.005418625
+## Month          0.0005051248 0.009009855
+## Age           -0.0065715800 0.009225787
+## Prior          0.0047297623 0.022866249
+## factor(Cell)2  0.8901745665 0.273045600
+## factor(Cell)3  1.2204573296 0.294489444
+## factor(Cell)4  0.4284821018 0.278016472
+## 
+## $HR
+##                     HR        LB        UB
+## Treat         1.279184 0.8598048 1.9031196
+## PS            0.968122 0.9578947 0.9784585
+## Month         1.000505 0.9829924 1.0183301
+## Age           0.993450 0.9756476 1.0115771
+## Prior         1.004741 0.9607056 1.0507948
+## factor(Cell)2 2.435555 1.4262021 4.1592473
+## factor(Cell)3 3.388737 1.9026899 6.0354235
+## factor(Cell)4 1.534926 0.8901011 2.6468874
+## 
+## $ETR
+##                     ETR        LB        UB
+## Treat         0.7957083 0.5517117 1.1476131
+## PS            1.0305249 1.0208196 1.0403225
+## Month         0.9995313 0.9832843 1.0160467
+## Age           1.0061178 0.9893916 1.0231268
+## Prior         0.9956199 0.9550462 1.0379173
+## factor(Cell)2 0.4377162 0.2701043 0.7093387
+## factor(Cell)3 0.3221542 0.1944446 0.5337421
+## factor(Cell)4 0.6718765 0.4077991 1.1069617</code></pre>
+<pre class="r"><code>coef &lt;- wei.lung$coefficients
+lifeWeil &lt;- function(data, coef){
+  res = vector()
+  for (i in seq(1,length(data[,1]))){
+    x = c(1,data$Treat[i], data$PS[i], data$Month[i], data$Age[i], data$Prior[i],as.numeric(data$Cell[i]==2),
+          as.numeric(data$Cell[i]==3),as.numeric(data$Cell[i]==4))
+    res = c(res,exp(as.numeric(coef)%*%x))
+  }
+  return(median(sort(res)))
+}
+patient1 &lt;- lungcancer.df[lungcancer.df$Cell == lungcancer.df$Cell[1],]
+patient2 &lt;- lungcancer.df[lungcancer.df$Cell == lungcancer.df$Cell[19],]
+life1 &lt;- lifeWeil(patient1,coef)
+life2 &lt;- lifeWeil(patient2,coef)
+cat(&quot;Estimated median lifetime equal patient 1:&quot;, life1)</code></pre>
+<pre><code>## Estimated median lifetime equal patient 1: 240.7295</code></pre>
+<pre class="r"><code>cat(&quot;Estimated median lifetime equal patient 19:&quot;, life2)</code></pre>
+<pre><code>## Estimated median lifetime equal patient 19: 83.78111</code></pre>
 </div>
 <div id="c" class="section level2">
 <h2>c)</h2>
-<pre class="r"><code>#fit.coxph &lt;- survreg(Surv(Y,C) ~ Treat + PS + Age + Prior + factor(Cell), data = lungcancer.df, dist = &quot;weibull&quot;)
-#fit.coxph
-#ggforest(fit.coxph, data = lungcancer.df)</code></pre>
+<p>To look at the <span class="math inline">\(p\textrm{-values}\)</span> to determine significant effect of the covariates in our model, we can look at the output from the function <span class="math inline">\(\texttt{summary.survreg}\)</span>.</p>
+<pre class="r"><code>summary(wei.lung)</code></pre>
+<pre><code>## 
+## Call:
+## survreg(formula = Surv(Y, C) ~ Treat + PS + Month + Age + Prior + 
+##     factor(Cell), data = lungcancer.df, dist = &quot;weibull&quot;)
+##                   Value Std. Error     z       p
+## (Intercept)    3.490536   0.691171  5.05 4.4e-07
+## Treat         -0.228523   0.186844 -1.22  0.2213
+## PS             0.030068   0.004828  6.23 4.7e-10
+## Month         -0.000469   0.008361 -0.06  0.9553
+## Age            0.006099   0.008553  0.71  0.4758
+## Prior         -0.004390   0.021228 -0.21  0.8362
+## factor(Cell)2 -0.826185   0.246312 -3.35  0.0008
+## factor(Cell)3 -1.132725   0.257598 -4.40 1.1e-05
+## factor(Cell)4 -0.397681   0.254749 -1.56  0.1185
+## Log(scale)    -0.074599   0.066311 -1.12  0.2606
+## 
+## Scale= 0.928 
+## 
+## Weibull distribution
+## Loglik(model)= -715.6   Loglik(intercept only)= -748.1
+##  Chisq= 65.08 on 8 degrees of freedom, p= 4.7e-11 
+## Number of Newton-Raphson Iterations: 6 
+## n= 137</code></pre>
+<p>From the <span class="math inline">\(p\textrm{-values}\)</span> we can see that <span class="math inline">\(PS\)</span> and <span class="math inline">\(Cell\)</span> has significant effect. We can also look at the figure bellow to to get a more visual representation of the <span class="math inline">\(p\textrm{-values}\)</span>.</p>
+<pre class="r"><code>psm.lung &lt;- psm(Surv(Y,C)~Treat + PS + Month+  Age + Prior + factor(Cell), data = lungcancer.df,dist=&quot;weibull&quot;)
+#plot(anova(psm.lung),margin=c(&quot;chisq&quot;,&quot;df&quot;,&quot;P&quot;))</code></pre>
+<p>Also we can use the function <span class="math inline">\(\texttt{fastbw}\)</span> to determine which covariates to use in our model. If we choose a significance level of <span class="math inline">\(5%\)</span> and then force our model to include Treatment. The Final model is shown under ‘’ and the result is the same as what we concluded above.</p>
+<pre class="r"><code>fastbw(psm.lung,rule = &quot;p&quot;,sls = 0.05, force=c(1),type = &quot;individual&quot;)</code></pre>
+<pre><code>## 
+## Parameters forced into all models:
+##  Treat 
+## 
+##  Deleted Chi-Sq d.f. P      Residual d.f. P      AIC  
+##  Month   0.00   1    0.9553 0.00     1    0.9553 -2.00
+##  Prior   0.07   1    0.7957 0.07     2    0.9655 -3.93
+##  Age     0.55   1    0.4577 0.62     3    0.8914 -5.38
+## 
+## Approximate Estimates after Deleting Factors
+## 
+##                 Coef    S.E. Wald Z         P
+## (Intercept)  3.84429 0.46356  8.293 1.110e-16
+## Treat       -0.21046 0.18089 -1.163 2.446e-01
+## PS           0.02906 0.00456  6.373 1.853e-10
+## Cell=2      -0.80044 0.23854 -3.356 7.918e-04
+## Cell=3      -1.10055 0.25107 -4.383 1.168e-05
+## Cell=4      -0.38904 0.25390 -1.532 1.255e-01
+## 
+## Factors in Final Model
+## 
+## [1] Treat PS    Cell</code></pre>
 </div>
 <div id="d" class="section level2">
 <h2>d)</h2>
+<pre class="r"><code>fit.coxph &lt;- survreg(Surv(Y,C) ~ Treat + PS+ Month + Age + Prior + factor(Cell), data = lungcancer.df)
+
+#ggforest(fit.coxph, data = lungcancer.df)</code></pre>
 </div>
 <div id="e" class="section level2">
 <h2>e)</h2>
