@@ -8,9 +8,15 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(survival)
+library(survminer)
+library(kableExtra)
+library(SurvRegCensCov)
+library(rms)
 ```
-In the solution exercise we used the \textbf{R}-libraries:
-```{r}
+In this exercise we used the \textbf{R}-libraries:
+```{r, eval=FALSE}
 # for ggplot and dataframe
 library(tidyverse)
 # for survival analysis functions
@@ -24,6 +30,7 @@ library(SurvRegCensCov)
 # to predict usable covariates
 library(rms)
 ```
+
 ## a)
 We want to look at the lifetime distributions in the patients in the different treatment groups, \textit{standard} and \textit{test}.
 ```{r}
@@ -75,13 +82,14 @@ kable(table.cell,
 From this result we see that the $Cell=1$ has the heighest expected lifetime, followed by $Cell = 4$. But their roles are reversed for the median. For $Cell = 2$ and $Cell = 3$ they are almost equal in both accounts, but much lower lifetimes than the two others. The same conclusions as the one we drew from the figures. 
 The reason the values of the median and expected lifetime not being consistently heigher than other group factors is because there are alot of data beeing either censored or dead the lower lifetimes. But the survival distribution might have data points at high lifetimes, and thereby have a long right tail, that will affect the expected lifetime alot. 
 
+
 ## b)
-In this exercise we will perform a fit to the Weibull regression model, with Treat, PS, Month, Age and Prior as model parameter, and Cell as a factor. The result of which is shown in the code bellow, using $\texttt{survreg}$ from the R-package $\textbf{survival}$.
+In this exercise we will perform a fit to the Weibull regression model, with $Treat$, $PS$, $Month$, $Age$ and $Prior$ as ordinary covariates, and $Cell$ as a factor represented by three dummy variables, $x_2$, $x_3$ and $x_4$. The result of which is shown in the code bellow, using $\texttt{survreg}$ from the R-package $\textbf{survival}$.
 ```{r}
 wei.lung<-survreg(Surv(Y,C) ~ Treat + PS + Month+  Age + Prior + factor(Cell), data = lungcancer.df, dist = "weibull")
 wei.lung
 ```
-In the table \ref{tab:b} the defined indicators or dummy variables is shown. And we adapt this to our regression model.
+In the table \ref{tab:b} the defined indicators or dummy variables are shown. And we adapt this to our regression model.
 ```{r}
 table.b <- data.frame(Levels.of.Cell = c(1,2,3,4), x2 =c(0,1,0,0), x3 = c(0,0,1,0), x4 = c(0,0,0,1))
 kable(table.b,align=rep('c', 4),
@@ -91,11 +99,11 @@ kable(table.b,align=rep('c', 4),
                                       "condensed","responsive"),
                 full_width = F,position = "center")
 ```
-Given $x = \{x_1(\textrm{Treat}),x_2(\textrm{Cell=2}),x_3(\textrm{Cell=3}),x_5(\textrm{Cell=4}),x_5(\textrm{PS}),x_6(\textrm{Month}),x_7(\textrm{Age}),x_8(\textrm{Prior})\}$, the values of the covariates given some person, were the "\textit{dummy variables}" $x_2,x_3,x_4$ is set by table \ref{tab:b}. From this the model for log-lifetime $T$ is given by the expression, with corresponding covariates $\mathbf{x}$,
+Given $x = \{x_1(\textrm{Treat}),x_2(\textrm{Cell=2}),x_3(\textrm{Cell=3}),x_5(\textrm{Cell=4}),x_5(\textrm{PS}),x_6(\textrm{Month}),x_7(\textrm{Age}),x_8(\textrm{Prior})\}$, the values of the covariates given some person, were the "\textit{dummy variables}" $x_2,x_3,x_4$ is set by table \ref{tab:b}, the model for log-lifetime $T$ is given by the expression, with corresponding covariates $\mathbf{x}$,
 $$
-  ln(T) = \beta_0 + \sigma\epsilon + \sum\limits_{i = 1}^8 \beta_ix_i,
+  ln(T) = \beta_0 + \sigma\epsilon + \sum\limits_{i = 1}^8 \beta_ix_i.
 $$
-where $\epsilon \sim G(0,\sigma)$, a gumbel distribution with shape $\sigma$. This gives us the hazard rate function
+Where $\epsilon \sim G(0,\sigma)$, a gumbel distribution with shape $\sigma$. This gives us the hazard rate function
 $$
   \begin{array}{rcl}
       z(t) & = & \alpha \cdot exp\{\beta_0 + \sum_{i=1}^8 \beta_ix_i\}^{-\alpha}\cdot t^{\alpha-1} \\
@@ -103,7 +111,7 @@ $$
            & = & z_0(t) \cdot e^{-\alpha\cdot\sum_{i=1}^8 \beta_ix_i}
   \end{array}.
 $$
-Now we will calculate the estimated median lifetimes of patients with respectivly the same covariates as patient number $1$ and $19$. This means that for patient $1$ which has $\mathrm{Cell} = 1$ and we find a patient with the same, in this case we chose patient $3$. For patient $19$ which has $\mathrm{Cell} = 2$, we chose patient $23$. In the function $\texttt{lifeWeil}$ the median lifetime from the our Weibull model is calculated. 
+Now we will calculate the estimated median lifetimes of patients with respectivly the same covariates as patient number $1$ and $19$, by this we look at the factor of $Cell$. Because it is the only covariate that would have discluded variables in the model based on its value. This means that for patient $1$ which has $\mathrm{Cell} = 1$ and patient $19$ which has $\mathrm{Cell} = 2$. In the function $\texttt{lifeWeil}$ the median lifetimes of a set of data is calculated using the estimated weibull model. 
 ```{r}
 coef <- wei.lung$coefficients
 lifeWeil <- function(data, coef){
@@ -130,24 +138,44 @@ summary(wei.lung)
 ```
 From the $p\textrm{-values}$ we can see that $PS$ and $Cell$ has significant effect. We can also look at the figure bellow to to get a more visual representation of the $p\textrm{-values}$.
 ```{r}
+temp<-data.frame(covariates = names(summary(wei.lung)$table[,4]) ,pval = summary(wei.lung)$table[,4])
+ggplot(temp) + 
+  geom_point(aes(x = pval, y = covariates)) + 
+  geom_vline(xintercept = 0.05, color = "firebrick") +
+  scale_x_reverse()
+```
+The red line is the significance level of $0.05$. We observe that only $PS$ and two factors of $Cell$ is within acceptable $p\textrm{-values}$.
+
+To look at the significant difference between the two treatments we use the function \texttt{ConvertWeibull} from the library \textbf{SurvRegCensCov}. From this function we get the HR(Hazard rate) or Risk of Death. We derive this by hand later in this exercise. 
+```{r}
+ConvertWeibull(wei.lung)$HR
+```
+Looking at the output and HR value for Treat, we can conclude that doing the \textit{test} treatment will increase the risk of death by approximately $28\%$.
+The scale parameter of our Weibull distribution is $\alpha=$``r wei.lung$scale``, which is pretty close to an exponential disitribution of $\alpha = 1$. This means that an exponential disitribution might be a better model than our Weibull model. To determine this we need a better way to compare the models. One way of doing this is to calculate the AIC(Akaike's Information Criterion)-values of the two, and then choose the model with the smallest value. We will do this later in this exercise, but we recognize that the scale parameter is close to that of a exponential distribution.
+Now we will take out the non-significant covariates in our model. This can be done by the $p\textrm{-values}$ found previously. Instead of just choosing we can use the function \texttt{fastbw} from the library \textbf{rms} to determine which covariates to use in our model based on $p\textrm{-values}$. If we choose a significance level of $5\%$ and then force our model to include Treatment we get the results shown in the code below, under '\textit{Factors in Final model}'. 
+```{r}
 psm.lung <- psm(Surv(Y,C)~Treat + PS + Month+  Age + Prior + factor(Cell), data = lungcancer.df,dist="weibull")
-```
-To look at the significant difference between the two treatments we can use the $\texttt{ConvertWeibull}$ to get the Event Time Ratio[ETR] of our model. 
-```{r}
-ConvertWeibull(wei.lung,conf.level = 0.95)$ETR
-```
-Looking at the output and ETR value for Treat, we can conclude that doing the \textit{test} treatment will significantly decrease the survival time by approximately $20\%$.
-The scale parameter of our Weibul disitribution is $\alpha=$``r wei.lung$scale``, this is pretty close to a exponential disitribution which has $\alpha = 1$. This means that a exponential disitribution might be better than our Weibull distribution. But to determine this the best way is to compare the AIC(Akaike's Information Criterion)-values of the two models, and then choose the one with the smallest.
-Now we will take out the non-significant covariates in our model. This can be done by the $p\textrm{-values}$ found previously, or we can use the function $\texttt{fastbw}$ to determine which covariates to use in our model based on $p\textrm{-values}$. If we choose a significance level of $5\%$ and then force our model to include Treatment we get the results shown in the code bellow in '\textit{Factors in Final model}'. 
-```{r}
 fastbw(psm.lung,rule = "p",sls = 0.05, force=c(1),type = "individual")
 ```
-This means we use the covariates $Treat$, $PS$ and the factors of $Cell$. Which is also what we concluded earlier.
+This means that the reduced model includes the covariates $Treat$, $PS$ and the factors of $Cell$. Which is also what we concluded earlier.
 ```{r}
 wei.lung.new <- survreg(Surv(Y,C)~Treat + PS + factor(Cell), data = lungcancer.df, dist = "weibull")
-ConvertWeibull(wei.lung.new,conf.level = 0.95)
+summary(wei.lung.new)
 ```
-Above we have done a new model fitting of a Weibull model using the covariates determined above. If we look at the HR(Hazard ratio)-values which is the risk of death, keeping all covariates constant except the one at interest. From this we find the significance of the covariates on risk of death, which means that $Cell = 3$ is the biggest factor to risk of death. The least significant covariate is PS, HR-value closest to $1$ and thereby affects risk the least. 
+Above we have done a Weibull fitting of the new reduced model. Looking at the scale $\alpha=$``r wei.lung.new$scale``, it is closer to that of a exponential disitribution. If we look at the $p\textrm{-value}$ plots we can see that only $Treat$ and $Cell = 4$ fall outside of the significance level of $0.05$.
+
+```{r}
+temp2<-data.frame(covariates = names(summary(wei.lung.new)$table[,4]) ,pval = summary(wei.lung.new)$table[,4])
+ggplot(temp2) + 
+  geom_point(aes(x = pval, y = covariates)) + 
+  geom_vline(xintercept = 0.05, color = "firebrick") +
+  scale_x_reverse()
+```
+If we again look at the risk of death(HR) values from this model fit, the significant difference between the two treatments have dropped alittle, but the risk of death for the \textit{test} treatment is $25\%$ higher than for the \textit{standard} treatment.
+```{r}
+ConvertWeibull(wei.lung.new,conf.level = 0.95)$HR
+```
+
 
 ## d)
 The Cox-model for the reduced model we found in c) is given by the equation
@@ -163,11 +191,11 @@ and the $z_0(t)$ function is known. Now we perform a cox regression on our data.
 fit.coxph <- coxph(Surv(Y,C) ~ Treat + PS+ factor(Cell), data = lungcancer.df)
 fit.coxph
 ```
-If we look at the relative risk of this Cox-model. The relative risk is found by increasing the value of a covariate by $1$ and see calculate the difference in hazard rate $z(t,\mathbf{x})$. Doing the calculations with the hazard rate function one ends up with equation, with $RR$ being relative risk,
+If we look at the relative risk of this Cox-model. The relative risk is found by increasing the value of one covariate by $1$ and keeping all the other covariates constant. Then calculating the quotient of the new and previous hazard rates, $z(t,x_i+1)$, $z(t,x_i)$, one gets the relative risk $RR$. Given by the equation
 $$
  RR = e^{\beta_i},
 $$
-with $i$ being the covariate of interest, where in out case $i \in \{1,2...,5\}$. This means that from the output of our Cox-regression above we look at the values of $exp(coef)$, which is the relative risk factor. From this we can see that the highest relative risk is from $\mathrm{Cell} = 3$. The risk of death is increased with $26\%$ if one uses the \textit{test} treatment istead of the \textit{standard} treatment. If one increases the \textit{Performance status} by $1$ the change is not that significant, but since has a large range, $x_5\in[10,90]$, the change is more significant than the what the relative risk factor is suggesting. 
+with $i$ being the covariate of interest, where in our case $i \in \{1,2...,5\}$. This means that from the output of our Cox-regression above we look at the values of $exp(coef)$, which is the relative risk factor. The highest relative risk is from $\mathrm{Cell} = 3$. The risk of death is increased with $26\%$ if one uses the \textit{test} treatment istead of the \textit{standard} treatment. If one increases the \textit{Performance status} by $1$ the change is not that significant. But since $PS$ has a large range, $x_5\in[10,90]$, the change is more significant than what the relative risk factor is suggesting. 
 
 ## e)
 In this exercise we will look at the interaction between two covariates, $Treat$ and $Cell$, while keeping $Cell$ as a factor. We are still using table \ref{tab:b} for the values of $x_2$,$x_3$ and $x_4$. With the interaction of the covariates, we introduce three new variables $z_2 = x_1\cdot x_2$, $z_3 = x_1\cdot x_3$ and $z_4 = x_1\cdot x_3$. We will use the same covariates as in the reduced model from c), $Treat$, $PS$, and $Cell$, and we use weibull regression to determine the $\beta_i$- values.
