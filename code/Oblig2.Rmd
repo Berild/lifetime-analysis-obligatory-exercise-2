@@ -32,7 +32,7 @@ library(rms)
 ```
 
 ## a)
-We want to look at the lifetime distributions in the patients in the different treatment groups, \textit{standard} and \textit{test}.
+We want to look at the lifetime distributions of the patients in the different treatment groups, \textit{standard} and \textit{test}.
 ```{r}
 lungcancer.df <- as.data.frame(
   read.table("../data/TMA4275VeteranLungCancer.txt", 
@@ -43,7 +43,7 @@ KM0 <- survfit(Surv(Y, C) ~ Treat,
                data=lungcancer.df)
 ggsurvplot(KM0, data = lungcancer.df)
 ```
-In the figure above the red curve is the survival distribution of the \textit{standard} treatment and the blue curve is the survival distribution of the \textit{test} treatment. From the plot we can see that the \textit{test} treatment is worse(steeper curve) in small lifetimes, but doesn't hit survival probability of $0$ for almost double the lifetime than for the \textit{standard} treatment. This tells us that \textit{test} is worse for '\textit{bad}' patients, but is better for '\textit{good}'. What a '\textit{bad}' or '\textit{good}' patient is, it's hard to say anything about yet, but might be possible after furter survival analysis and the inclusion of more covariates. The median and expected lifetimes of patients in the two groups is calculated in the code bellow and the results of which is shown in \ref{tab:treat}. From this we can see that median of the survival probaility is lower for the \textit{test} treatment, but the expected lifetime is alittle higher than for the \textit{standard} treatment. 
+In the figure above the red curve is the survival distribution of the \textit{standard} treatment and the blue curve is the survival distribution of the \textit{test} treatment. From this plot we can see that the \textit{test} treatment is lower for small lifetimes, but doesn't hit the survival probability of $0\%$ before double the lifetime of the \textit{standard} treatment. This tells us that \textit{test} is worse for '\textit{bad}' patients, but it is better for '\textit{good}' patients. What a '\textit{bad}' or '\textit{good}' patient is, is hard to say anything about yet, but might be possible after furter survival analysis and the inclusion of more covariates. The median and expected lifetimes of patients in the two groups is calculated in the code below and the results of which is shown in \ref{tab:treat}. From this we can see that median of the survival probaility is lower for the \textit{test} treatment, but the expected lifetime is higher than \textit{standard} treatment. 
 ```{r}
 treat.median <- summary(KM0)$table[, "median"]
 treat.expected <- summary(KM0)$table[, "*rmean"]
@@ -79,12 +79,12 @@ kable(table.cell,
                                       "condensed","responsive"),
                 full_width = F,position = "center")
 ```
-From this result we see that the $Cell=1$ has the heighest expected lifetime, followed by $Cell = 4$. But their roles are reversed for the median. For $Cell = 2$ and $Cell = 3$ they are almost equal in both accounts, but much lower lifetimes than the two others. The same conclusions as the one we drew from the figures. 
-The reason the values of the median and expected lifetime not being consistently heigher than other group factors is because there are alot of data beeing either censored or dead the lower lifetimes. But the survival distribution might have data points at high lifetimes, and thereby have a long right tail, that will affect the expected lifetime alot. 
+From this result we see that the $Cell=1$ has the highest expected lifetime, followed by $Cell = 4$. But the roles are reversed for the median. For $Cell = 2$ and $Cell = 3$ they are almost equal in both accounts, but has much lower lifetimes than the two others. The same conclusions as the one we drew from the figures. 
+The reason the values of the median and expected lifetime is not being consistently heigher than other group factors, is because there are alot of data beeing either censored or dead at the lower lifetimes. But the survival distribution might have data points at high lifetimes, and thereby have a long right tail that will affect the expected lifetime alot. 
 
 
 ## b)
-In this exercise we will perform a fit to the Weibull regression model, with $Treat$, $PS$, $Month$, $Age$ and $Prior$ as ordinary covariates, and $Cell$ as a factor represented by three dummy variables, $x_2$, $x_3$ and $x_4$. The result of which is shown in the code bellow, using $\texttt{survreg}$ from the R-package $\textbf{survival}$.
+In this exercise we will perform a fit to the Weibull regression model, with $Treat$, $PS$, $Month$, $Age$ and $Prior$ as ordinary covariates, and $Cell$ as a factor represented by three dummy variables, $x_2$, $x_3$ and $x_4$. The result of which is shown in the code below, using $\texttt{survreg}$ from the R-package $\textbf{survival}$.
 ```{r}
 wei.lung<-survreg(Surv(Y,C) ~ Treat + PS + Month+  Age + Prior + factor(Cell), data = lungcancer.df, dist = "weibull")
 wei.lung
@@ -99,7 +99,7 @@ kable(table.b,align=rep('c', 4),
                                       "condensed","responsive"),
                 full_width = F,position = "center")
 ```
-Given $x = \{x_1(\textrm{Treat}),x_2(\textrm{Cell=2}),x_3(\textrm{Cell=3}),x_5(\textrm{Cell=4}),x_5(\textrm{PS}),x_6(\textrm{Month}),x_7(\textrm{Age}),x_8(\textrm{Prior})\}$, the values of the covariates given some person, were the "\textit{dummy variables}" $x_2,x_3,x_4$ is set by table \ref{tab:b}, the model for log-lifetime $T$ is given by the expression, with corresponding covariates $\mathbf{x}$,
+Given $x = \{x_1(\textrm{Treat}),x_2(\textrm{Cell=2}),x_3(\textrm{Cell=3}),x_5(\textrm{Cell=4}),x_5(\textrm{PS}),x_6(\textrm{Month}),x_7(\textrm{Age}),x_8(\textrm{Prior})\}$, the values of the covariates given some person, where the "\textit{dummy variables}" $x_2,x_3,x_4$ is set by table \ref{tab:b}, the model for log-lifetime $T$ is given by the expression, with corresponding covariates $\mathbf{x}$,
 $$
   ln(T) = \beta_0 + \sigma\epsilon + \sum\limits_{i = 1}^8 \beta_ix_i.
 $$
@@ -111,7 +111,7 @@ $$
            & = & z_0(t) \cdot e^{-\alpha\cdot\sum_{i=1}^8 \beta_ix_i}
   \end{array}.
 $$
-Now we will calculate the estimated median lifetimes of patients with respectivly the same covariates as patient number $1$ and $19$, by this we look at the factor of $Cell$. Because it is the only covariate that would have discluded variables in the model based on its value. This means that for patient $1$ which has $\mathrm{Cell} = 1$ and patient $19$ which has $\mathrm{Cell} = 2$. In the function $\texttt{lifeWeil}$ the median lifetimes of a set of data is calculated using the estimated weibull model. 
+Now we will calculate the estimated median lifetimes of patients with respectivly the same covariates as patient number $1$ and $19$. Which means we look at the factor of $Cell$, because this is the only covariate that would have discluded variables in the model based on its value. This means that we use for patient $1$, $\mathrm{Cell} = 1$ and patient $19$ we use $\mathrm{Cell} = 2$. In the function $\texttt{lifeWeil}$ the median lifetimes of a set of data is calculated. 
 ```{r}
 coef <- wei.lung$coefficients
 lifeWeil <- function(data, coef){
@@ -136,7 +136,7 @@ To look at the $p\textrm{-values}$ to determine significant effect of the covari
 ```{r}
 summary(wei.lung)
 ```
-From the $p\textrm{-values}$ we can see that $PS$ and $Cell$ has significant effect. We can also look at the figure bellow to to get a more visual representation of the $p\textrm{-values}$.
+From the $p\textrm{-values}$ we can see that $PS$ and $Cell$ has significant effect. We can also look at the figure below to to get a more visual representation of the $p\textrm{-values}$.
 ```{r}
 temp<-data.frame(covariates = names(summary(wei.lung)$table[,4]) ,pval = summary(wei.lung)$table[,4])
 ggplot(temp) + 
@@ -146,13 +146,13 @@ ggplot(temp) +
 ```
 The red line is the significance level of $0.05$. We observe that only $PS$ and two factors of $Cell$ is within acceptable $p\textrm{-values}$.
 
-To look at the significant difference between the two treatments we use the function \texttt{ConvertWeibull} from the library \textbf{SurvRegCensCov}. From this function we get the HR(Hazard rate) or Risk of Death. We derive this by hand later in this exercise. 
+To look at the significant difference between the two treatments we use the function \texttt{ConvertWeibull} from the library \textbf{SurvRegCensCov}. Using this function we get the HR(Hazard rate) or Risk of Death. We derive this by hand later in this exercise. 
 ```{r}
 ConvertWeibull(wei.lung)$HR
 ```
-Looking at the output and HR value for Treat, we can conclude that doing the \textit{test} treatment will increase the risk of death by approximately $28\%$.
+Looking at the output and HR value for $Treat$, we can conclude that doing the \textit{test} treatment will increase the risk of death by approximately $28\%$.
 The scale parameter of our Weibull distribution is $\alpha=$``r wei.lung$scale``, which is pretty close to an exponential disitribution of $\alpha = 1$. This means that an exponential disitribution might be a better model than our Weibull model. To determine this we need a better way to compare the models. One way of doing this is to calculate the AIC(Akaike's Information Criterion)-values of the two, and then choose the model with the smallest value. We will do this later in this exercise, but we recognize that the scale parameter is close to that of a exponential distribution.
-Now we will take out the non-significant covariates in our model. This can be done by the $p\textrm{-values}$ found previously. Instead of just choosing we can use the function \texttt{fastbw} from the library \textbf{rms} to determine which covariates to use in our model based on $p\textrm{-values}$. If we choose a significance level of $5\%$ and then force our model to include Treatment we get the results shown in the code below, under '\textit{Factors in Final model}'. 
+Now we will take out the non-significant covariates in our model. This can be done by looking at the $p\textrm{-values}$ found previously. Instead of just choosing, we can use the function \texttt{fastbw} from the library \textbf{rms} to determine which covariates to use in our model based on $p\textrm{-values}$. If we choose a significance level of $5\%$ and then force our model to include $Treat$ as a covariate, we get the results shown in the code below, under '\textit{Factors in Final model}'. 
 ```{r}
 psm.lung <- psm(Surv(Y,C)~Treat + PS + Month+  Age + Prior + factor(Cell), data = lungcancer.df,dist="weibull")
 fastbw(psm.lung,rule = "p",sls = 0.05, force=c(1),type = "individual")
@@ -162,7 +162,7 @@ This means that the reduced model includes the covariates $Treat$, $PS$ and the 
 wei.lung.new <- survreg(Surv(Y,C)~Treat + PS + factor(Cell), data = lungcancer.df, dist = "weibull")
 summary(wei.lung.new)
 ```
-Above we have done a Weibull fitting of the new reduced model. Looking at the scale $\alpha=$``r wei.lung.new$scale``, it is closer to that of a exponential disitribution. If we look at the $p\textrm{-value}$ plots we can see that only $Treat$ and $Cell = 4$ fall outside of the significance level of $0.05$.
+Above we have done a Weibull fitting of the new reduced model. Looking at the scale $\alpha=$``r wei.lung.new$scale``, it is closer to that of a exponential distribution. If we look at the $p\textrm{-value}$ plots below, we can see that only $Treat$ and $Cell = 4$ fall outside of the significance level of $0.05$.
 
 ```{r}
 temp2<-data.frame(covariates = names(summary(wei.lung.new)$table[,4]) ,pval = summary(wei.lung.new)$table[,4])
@@ -191,31 +191,38 @@ and the $z_0(t)$ function is known. Now we perform a cox regression on our data.
 fit.coxph <- coxph(Surv(Y,C) ~ Treat + PS+ factor(Cell), data = lungcancer.df)
 fit.coxph
 ```
-If we look at the relative risk of this Cox-model. The relative risk is found by increasing the value of one covariate by $1$ and keeping all the other covariates constant. Then calculating the quotient of the new and previous hazard rates, $z(t,x_i+1)$, $z(t,x_i)$, one gets the relative risk $RR$. Given by the equation
+If we look at the relative risk of this Cox-model. The relative risk is found by increasing the value of one covariate by $1$ and keeping all the other covariates constant. Then calculating the quotient of the new and previous hazard rate function, $z(t,x_i+1)$, $z(t,x_i)$, one gets the relative risk $RR$. Given by the equation
 $$
  RR = e^{\beta_i},
 $$
-with $i$ being the covariate of interest, where in our case $i \in \{1,2...,5\}$. This means that from the output of our Cox-regression above we look at the values of $exp(coef)$, which is the relative risk factor. The highest relative risk is from $\mathrm{Cell} = 3$. The risk of death is increased with $26\%$ if one uses the \textit{test} treatment istead of the \textit{standard} treatment. If one increases the \textit{Performance status} by $1$ the change is not that significant. But since $PS$ has a large range, $x_5\in[10,90]$, the change is more significant than what the relative risk factor is suggesting. 
+$i$ being the covariate of interest, where in our case $i \in \{1,2...,5\}$. This means that from the output of our Cox-regression above we look at the values of $exp(coef)$, which is the relative risk factor. The highest relative risk is from $\mathrm{Cell} = 3$. The risk of death is increased with $30\%$ if one uses the \textit{test} treatment istead of the \textit{standard} treatment. If one increases the \textit{Performance status} by $1$ the change is not that significant. But since $PS$ has a large range, $x_5\in[10,90]$, the change is more significant than what the relative risk factor is suggesting. 
 
 ## e)
-In this exercise we will look at the interaction between two covariates, $Treat$ and $Cell$, while keeping $Cell$ as a factor. We are still using table \ref{tab:b} for the values of $x_2$,$x_3$ and $x_4$. With the interaction of the covariates, we introduce three new variables $z_2 = x_1\cdot x_2$, $z_3 = x_1\cdot x_3$ and $z_4 = x_1\cdot x_3$. We will use the same covariates as in the reduced model from c), $Treat$, $PS$, and $Cell$, and we use weibull regression to determine the $\beta_i$- values.
+In this exercise we will look at the interaction between two covariates, $Treat$ and $Cell$, while keeping $Cell$ as a factor. We are still using table \ref{tab:b} for the values of $x_2$,$x_3$ and $x_4$. With the interaction of the covariates, we introduce three new variables $z_2 = x_1\cdot x_2$, $z_3 = x_1\cdot x_3$ and $z_4 = x_1\cdot x_3$. We will use the same covariates as in the reduced model from c), $Treat$, $PS$, and $Cell$, and we use Weibull regression to determine the $\beta_i$- values.
 ```{r}
 wei.lung.int<- survreg(Surv(Y,C) ~ Treat + PS+ factor(Cell) + Treat*factor(Cell), data = lungcancer.df, dist = "weibull")
 summary(wei.lung.int)
 ```
-As hinted in the exercise paper the only interaction which has $p\mathrm{-value}$ lower than a significance level of 0.05 is $z_2$.
+As hinted in the exercise paper the only interaction which has $p\mathrm{-values}$ lower than a significance level of $0.05$ is $z_2$. Which is also shown in the figure below. Also all of the factors of $Cell$ has now fallen outside of the significance level. $PS$ is still as significant as before. 
+```{r}
+temp3<-data.frame(covariates = names(summary(wei.lung.int)$table[,4]) ,pval = summary(wei.lung.int)$table[,4])
+ggplot(temp3) + 
+  geom_point(aes(x = pval, y = covariates)) + 
+  geom_vline(xintercept = 0.05, color = "firebrick") +
+  scale_x_reverse()
+```
 
-We will now to calculate the estimated relative risk of patients with $Cell = 2$ in the \textit{standard} treatment, compared to the patient with the \textit{test} treatment. First we find a general formula for the Relative Risk($RR$) given the $Cell$. Let $\mathbf{x} = \{x_1,x_2,x_3,x_4,x_5,x_1\cdot x_2,x_1\cdot x_3,x_1\cdot x_4\}$ and $\mathbf{x} = \{x_1+1,x_2,x_3,x_4,x_5,(x_1+1)\cdot x_2,(x_1+1)\cdot x_3,(x_1+1)\cdot x_4\}$, then the relative risk is given by the equation
+We will now to calculate the estimated relative risk of patients with $Cell = 2$ in the \textit{standard} treatment, compared to the patient with the \textit{test} treatment. First we find a general formula for the Relative Risk($RR$) given the $Cell$. Let $\mathbf{x}_1 = \{x_1,x_2,x_3,x_4,x_5,x_1\cdot x_2,x_1\cdot x_3,x_1\cdot x_4\}$ and $\mathbf{x}_2 = \{x_1+1,x_2,x_3,x_4,x_5,(x_1+1)\cdot x_2,(x_1+1)\cdot x_3,(x_1+1)\cdot x_4\}$, then the relative risk is given by the equation.
 $$
 \begin{array}{rcl}
   RR_{\textrm{weib}}(x_1|Cell=j;j\in\{2,3,4\}) & = & \frac{z(t;\mathbf{x}_2|Cell=j)}{z(t;\mathbf{x}_1|Cell=j)}\vspace{1em}\\
                                & = & \frac{z_0(t)\cdot \exp\{-\alpha\cdot(\beta_1(x_1+1) + \beta_jx_j + \beta_5x_5 + \beta_{j+4}(x_1+1)x_j)\}}{z_0(t)\cdot \exp\{-\alpha\cdot(\beta_1x_1+ \beta_jx_j + \beta_5x_5 + \beta_{j+4}x_1x_j)\}}\vspace{1em}\\ 
                                & = & \exp\{-\alpha\cdot(\beta_1 + \beta_{j+4})\}
-\end{array}
+\end{array}.
 $$
 If the $Cell = 1$, the expression simply becomes
 $$
-RR(x_1|Cell=1) = \exp\{-\alpha\cdot\beta_1\}
+RR(x_1|Cell=1) = \exp\{-\alpha\cdot\beta_1\}.
 $$
 From this knowledge we can create a function in \textbf{R} that calculates the relative risk of all the different $Cell$ types respectivly. This is done in the function \texttt{relativeRisk} and the result of which is shown in table \ref{tab:e}.
 ```{r}
@@ -240,56 +247,62 @@ kable(table.e,align=rep('c', 4),
                                       "condensed","responsive"),
                 full_width = F,position = "center")
 ```
-From the results in table \ref{tab:e} we can see that for patients with $Cell$-type $1$ it is approximately $25\%$ lower risk of death using the \textit{test} treatment. For patients with $Cell$-type $2$ it is approximately $87\%$ higher risk of death using the \textit{test} treatment. Further on for patients with $Cell$-type $3$, it is approximately $19\%$ lower risk of death using the \textit{test} treatment. And last for patients with $Cell$-type $4$ it is approximately $48\%$ higher risk of death using the \textit{test} treatment. Thereby we can conclude that patients with $Cell$-type $1$ should take \textit{test} treatment, patients with $Cell$-type $2$ should take the \textit{standard} treatment, patients with $Cell$-type $3$ should take \textit{test} treatment and patients of $Cell$-type $4$ should take the \textit{standard} treatment. 
+From the results in table \ref{tab:e} we can see that for patients with $Cell$-type $1$ it is approximately $25\%$ lower risk of death using the \textit{test} treatment. For patients with $Cell$-type $2$ it is approximately $87\%$ higher risk of death using the \textit{test} treatment. Further on for patients with $Cell$-type $3$, it is approximately $19\%$ lower risk of death using the \textit{test} treatment. And last for patients with $Cell$-type $4$, it is approximately $48\%$ higher risk of death using the \textit{test} treatment. Thereby we can conclude that patients with $Cell$-type $1$ should take \textit{test} treatment, patients with $Cell$-type $2$ should take the \textit{standard} treatment, patients with $Cell$-type $3$ should take \textit{test} treatment and patients with $Cell$-type $4$ should take the \textit{standard} treatment. 
 
 
 ## f)
-From the model fit in the final model in exercise e), we used a Weibull regression with reduced amount of covariates from what we started out with. We used $Treat$, $Cell$ as factor, $PS$ , and  $Treat \times Cell$ with $Cell$ as factor. We will now try to fit different distributions to the data using the same covariates as in e).
-We tested the exponential distribution yielding:
+In the final model in exercise e), we used a Weibull regression with a reduced number of covariates and a interaction covariate, $Treat$, $Cell$, $PS$ and  $Treat \times Cell$ with $Cell$ as factor. We will now fit different distributions to this model with out data.
+We tested the exponential, lognormal and log-logistic distributions to the final model in exercise e). We are not taking into account that the different distributions might choose different covariates as better for the model. The number of covariates in our model is $p=4$($x_1$, $x_2$ or $x_3$ or $x_4$, $x_5$, $z_2$ or $z_3$ or $z_4$).
+Fit of exponential distribution:
 ```{r}
 exp.lung<- survreg(Surv(Y,C)~Treat + PS + factor(Cell)+ factor(Cell)*Treat, data = lungcancer.df, dist = "exponential")
 summary(exp.lung)
 ```
-The gaussian distribution:
-```{r}
-gauss.lung<- survreg(Surv(Y,C)~Treat + PS + factor(Cell)+ factor(Cell)*Treat, data = lungcancer.df, dist = "gaussian")
-summary(gauss.lung)
-```
-The logistic distribution:
-```{r}
-log.lung<- survreg(Surv(Y,C)~Treat + PS + factor(Cell)+ factor(Cell)*Treat, data = lungcancer.df, dist = "logistic")
-summary(log.lung)
-```
-The lognormal distribution:
+
+Fit of lognormal distribution:
 ```{r}
 lognorm.lung<- survreg(Surv(Y,C)~Treat + PS + factor(Cell)+ factor(Cell)*Treat, data = lungcancer.df, dist = "lognormal")
 summary(lognorm.lung)
 ```
-The log-logistic distribution:
+
+
+Fit of log-logistic distribution:
 ```{r}
 loglog.lung<- survreg(Surv(Y,C)~Treat + PS + factor(Cell)+ factor(Cell)*Treat, data = lungcancer.df, dist = "loglogistic")
 summary(loglog.lung)
 ```
-From the loglikelihood and the number of parameters $k$ in the different distributions we can caluclate the $AIC$(Akaike's Information Criterion) by the equation
-$$
-  AIC = -2\cdot log L + 2\cdot k
-$$
-```{r}
-AIC.wei <- -2*wei.lung.int$loglik[1]+2*summary(wei.lung.int)$df
-AIC.exp <- -2*exp.lung$loglik[1]+2*(1 - pchisq(summary(exp.lung)$chi, (summary(exp.lung)$df-summary(exp.lung)$idf)))
-AIC.gauss <- -2*gauss.lung$loglik[1]+2*(1 - pchisq(summary(gauss.lung)$chi, (summary(gauss.lung)$df-summary(gauss.lung)$idf)))
-AIC.log <- -2*log.lung$loglik[1]+2*(1 - pchisq(summary(log.lung)$chi, (summary(log.lung)$df-summary(log.lung)$idf)))
-AIC.lognorm <- -2*lognorm.lung$loglik[1]+2*(1 - pchisq(summary(lognorm.lung)$chi, (summary(lognorm.lung)$df-summary(lognorm.lung)$idf)))
-AIC.loglog <- -2*loglog.lung$loglik[1]+2*(1 - pchisq(summary(loglog.lung)$chi, (summary(loglog.lung)$df-summary(loglog.lung)$idf)))
 
-table.f <- data.frame(Distribution = c("weibull","exponential","gaussian","logistic","lognormal","loglogistic"), 
-                      AIC = c(AIC.wei,AIC.exp,AIC.gauss,AIC.log,AIC.lognorm,AIC.loglog))
+
+From the loglikelihood, the number of parameters $p$ and the distribution factor $k$ we can calculate the $AIC$ of the distributions by the equation
+$$
+  AIC = -2\cdot log L + 2(k + 2 + p).
+$$
+This is the AIC expression suggested by Collett(1994).
+The AIC values is calculated by this expression in the code under and the results is shown in the table \ref{tab:f}.
+```{r}
+# using p = 4
+# k = 1 for weibull
+AIC.wei <- -2*wei.lung.int$loglik[1] + 2*(1 + 4 + 2)
+# k = 0 for exponential
+AIC.exp <- -2*exp.lung$loglik[1] + 2*(0 + 4 + 2)
+# k = 1 for lognormal model
+AIC.lognorm <- -2*lognorm.lung$loglik[1] + 2*(1 + 4 + 2)
+# k = 1 for log-logistic model
+AIC.loglog <- -2*loglog.lung$loglik[1]+2*(1 + 4 + 2)
+
+table.f <- data.frame(Distribution = c("weibull",
+                                       "exponential",
+                                       "lognormal",
+                                       "loglogistic"), 
+                      AIC = c(AIC.wei,AIC.exp,
+                              AIC.lognorm,AIC.loglog))
 
 kable(table.f,align=rep('c', 4),
-      caption = "\\label{tab:f}Estimated Relative Risk of 
-      \\textit{test} treatment\n compared to \\textit{standard} 
-      treatment in the different \\textit{Cell}-types.") %>% 
+      caption = "\\label{tab:f}AIC values of four different
+      distribution fits on the reduced model of the lung cancer 
+      data set.") %>% 
   kable_styling(bootstrap_options = c("striped", "hover",
                                       "condensed","responsive"),
                 full_width = F,position = "center")
 ```
+In the table \ref{tab:f} we can see that the Weibull model gives us the lowest AIC value, and thereby we can conclude that this is the best distribution to fit our model to. It also seems like the lognormal distribution is better than the special case of Weibull, the exponential distribution. We can also see that the scale value in our Weibull model has diverged further away from that of the exponential distribution in the model suggested in e), $\alpha =$``r wei.lung.int$scale``.
